@@ -15,8 +15,7 @@ Reference: *Agentic Design Patterns*
 
 ## 📖 内容涵盖
 
-- Langchain框架源码解析
-- 智能体架构设计与实现
-- 提示工程技巧
-- 模型微调和部署
-- 应用案例分析
+- 🔧Langchain框架源码解析
+- 💡智能体架构设计与实现
+- 💬提示工程技巧
+- 🤖模型微调和部署

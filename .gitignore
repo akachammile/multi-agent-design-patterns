@@ -1,0 +1,54 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment and dependencies
+.env
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+*.egg-info/
+*.egg
+
+# IDE / editor settings
+.vscode/
+.idea/
+*.swp
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+.DS_Store
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Build and distribution folders
+build/
+dist/
+*.spec
+
+# Test / coverage
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Data and outputs
+data/
+outputs/
+results/
+cache/
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.ckpt
+
+# Ignore large generated files
+*.zip
+*.tar
+*.gz

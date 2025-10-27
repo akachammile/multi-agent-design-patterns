@@ -8,3 +8,5 @@ def agent_1(input):
         
     )
     
+def add(int a, int b)->int:
+    return a+b

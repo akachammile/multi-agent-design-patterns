@@ -82,10 +82,4 @@ We welcome contributions from the community! Please follow these steps:
    进行修改并确保所有测试通过。
 3. Submit a pull request with detailed descriptions.  
    提交包含详细描述的 Pull Request。
-
 ---
-
-## 📜 License / 许可证
-
-This project is licensed under the MIT License.  
-本项目采用 MIT 许可证。

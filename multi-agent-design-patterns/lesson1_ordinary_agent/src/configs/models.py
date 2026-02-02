@@ -101,7 +101,7 @@ DEFAULT_CHAT_MODEL_PROVIDERS: dict[str, ChatModelProvider] = {
         models=[
             "openai/gpt-4o",
             "x-ai/grok-4",
-            "google/gemini-2.5-pro",
+            "google/gemini-3-pro",
             "anthropic/claude-sonnet-4",
         ],
     ),

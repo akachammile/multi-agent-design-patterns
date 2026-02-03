@@ -122,6 +122,91 @@ print(f"Output shape: {logits.shape}")  # (batch_size, tgt_len, tgt_vocab)
 python transformer.py
 ```
 
+## 训练模型
+
+### 1. 安装依赖
+
+```bash
+pip install torch spacy tqdm
+```
+
+下载 spaCy 语言模型（德英翻译）：
+
+```bash
+python -m spacy download en_core_web_sm
+python -m spacy download de_core_news_sm
+```
+
+### 2. 下载数据集
+
+#### Multi30k（推荐入门）
+- **仓库**: https://github.com/multi30k/dataset
+- **描述**: 约 3 万对德英句子，适合快速测试
+
+```bash
+# 下载后将文件放入 data/ 目录，格式如下：
+# data/train.de, data/train.en
+# data/val.de, data/val.en
+```
+
+#### 其他数据集
+| 数据集 | 链接 | 描述 |
+|--------|------|------|
+| WMT14 | https://www.statmt.org/wmt14/translation-task.html | 原论文使用的大规模数据集 |
+| IWSLT | https://wit3.fbk.eu/ | TED 演讲翻译 |
+| OpenSubtitles | https://opus.nlpl.eu/OpenSubtitles.php | 多语言字幕 |
+
+### 3. 训练命令
+
+#### 使用合成数据测试（无需下载）
+
+```bash
+python train.py --test
+```
+
+#### 使用真实数据训练
+
+```bash
+python train.py \
+    --train_src data/train.de \
+    --train_tgt data/train.en \
+    --val_src data/val.de \
+    --val_tgt data/val.en \
+    --epochs 10 \
+    --batch_size 32 \
+    --d_model 512 \
+    --h 8 \
+    --N 6
+```
+
+### 4. 训练参数
+
+| 参数 | 默认值 | 描述 |
+|------|--------|------|
+| `--epochs` | 10 | 训练轮数 |
+| `--batch_size` | 32 | 批次大小 |
+| `--d_model` | 512 | 模型维度 |
+| `--d_ff` | 2048 | 前馈层维度 |
+| `--h` | 8 | 注意力头数 |
+| `--N` | 6 | 编码器/解码器层数 |
+| `--warmup` | 4000 | 学习率预热步数 |
+| `--checkpoint_dir` | checkpoints | 模型保存目录 |
+
+### 5. 文件结构
+
+```
+transformer/
+├── transformer.py   # 模型定义
+├── config.py        # 配置管理
+├── data.py          # 数据处理
+├── train.py         # 训练脚本
+├── README.md
+├── data/            # 数据目录（需手动创建）
+├── checkpoints/     # 模型保存目录（自动创建）
+└── vocab/           # 词汇表目录（自动创建）
+```
+
+
 ## 参考文献
 
 ```bibtex

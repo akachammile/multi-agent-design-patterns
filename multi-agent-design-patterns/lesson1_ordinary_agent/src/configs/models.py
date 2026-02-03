@@ -113,12 +113,19 @@ DEFAULT_CHAT_MODEL_PROVIDERS: dict[str, ChatModelProvider] = {
         env="MODELSCOPE_ACCESS_TOKEN",
         models=["Qwen/Qwen3-32B", "deepseek-ai/DeepSeek-V3.2"],
     ),
+    "gemini": ChatModelProvider(
+        name="Gemini",
+        default="gemini-3-pro-preview",
+        env="GEMINI_API_KEY",
+        models=[
+            "gemini-3-pro-preview",
+            "gemini-3-flash-preview",
+            "gemini-2.5-pro",
+            "gemini-flash-latest",
+        ],
+    ),
 }
 
-
-# ============================================================
-# 默认Embeding模型配置
-# ============================================================
 
 DEFAULT_EMBED_MODELS: dict[str, EmbedModelInfo] = {
     "siliconflow/BAAI/bge-m3": EmbedModelInfo(

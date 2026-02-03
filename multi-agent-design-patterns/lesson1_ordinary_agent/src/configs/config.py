@@ -1,12 +1,3 @@
-"""
-应用配置模块
-
-使用 Pydantic BaseModel 实现配置管理，支持：
-- 从 TOML 文件加载用户配置
-- 仅保存用户修改过的配置项
-- 默认配置定义在代码中
-"""
-
 import os
 from pathlib import Path
 from typing import Any

@@ -21,3 +21,8 @@ def load_specific_model(full_model_name: str, **kwargs) -> BaseChatModel:
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI()
+
+    elif provider in ["gemini"]:
+        from langchain_google_genai import GoogleGenerativeAI
+
+        return GoogleGenerativeAI(model=model_spec, api_key=SecretStr(api_key),)

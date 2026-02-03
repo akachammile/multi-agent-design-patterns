@@ -1,66 +1,46 @@
-# LangGraph / LangGraph 简介
+# LangChain (2025 Edition)
 
-![Banner](assets/LLM.jpg)
+## 🌟 2025 年的 10 月 LangChain 正式发布了其V1.0的版本, 对其内容和架构做出了巨大的更新
 
-A concise implementation of **LangGraph**, a framework for orchestrating multi-agent workflows with language models.  
+截止 2025 年，LangChain 已从最初的大杂烩式工具集，进化为一个专注于 **构建可适应生态进化的 Agent 平台**。
+其核心理念已从“链（Chain）”全面升级为“智能体架构（Agent Architecture）”。
 
-LangGraph 是一个多智能体工作流编排框架，专注于通过语言模型实现复杂任务的分解与执行。  
+### � 核心更新：`create_agent` 的回归与统一
 
----
+LangChain 最显著的变化是将底层使用langGraph重新设计, 
+功能上: 引入了统一的入口函数 `create_agent`, 并且加入了 `Middleware` 等特性. 
+该部分代码将会从底层对 Langchain 做出彻底的解读.
 
-## 📚 Project Introduction / 项目介绍
+```python
+from langchain.agents import create_agent
 
-This is a specialized implementation of LangGraph, designed to streamline the coordination of multiple agents in complex workflows.  
-
-这是一个 LangGraph 的专项实现，旨在简化复杂工作流中多个智能体的协调。
-
-## 📖 Key Features / 主要特性
-
-- 🔧 **Multi-Agent Orchestration** / 多智能体编排  
-  Facilitates task decomposition and execution across multiple agents.  
-  支持多智能体之间的任务分解与执行。
-
-- 💡 **Dynamic Workflow Management** / 动态工作流管理  
-  Enables dynamic adjustments to workflows based on real-time inputs.  
-  根据实时输入动态调整工作流。
-
-- 💬 **Language Model Integration** / 语言模型集成  
-  Provides seamless integration with large language models (LLMs).  
-  提供与大语言模型（LLMs）的无缝集成。
-
-## 🛠 Usage Instructions / 使用说明
-
-1. **Installation** / 安装依赖  
-   Run the following command to install dependencies:  
-   执行以下命令安装依赖：
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Execution** / 运行代码  
-   Execute the main script to start the LangGraph system:  
-   执行主脚本以启动 LangGraph 系统：
-   ```bash
-   python main.py
-   ```
-
-3. **Testing** / 测试  
-   Run unit tests to verify functionality:  
-   执行单元测试以验证功能：
-   ```bash
-   pytest test_main.py
-   ```
-
----
-
-## 📂 Directory Structure / 目录结构
-
-```
-multi_agent_framework/
-├── langgraph/               # LangGraph Implementation / LangGraph 实现
-│   ├── langchain_core            # Documentation / 文档
-│   ├── main.py              # Main logic / 主逻辑
-│   └── utils.py             # Utility functions / 工具函数
+agent = create_agent(
+    model="claude-sonnet-4-5-20250929",  # 支持直接指定模型 ID 或模型对象
+    tools=[get_weather],                  # 工具列表
+    middlewares=[example_middleware],
+    system_prompt="You are a helpful assistant",
+)
 ```
 
----
+这个新的抽象层实际上构建在 **LangGraph** 之上，融合了易用性与灵活性：
+- **极简入门**：10 行代码即可启动一个具备工具调用能力的 Agent。
+- **深度定制**：通过 Middleware 和底层 Graph 访问，支持复杂的上下文工程（Context Engineering）。
+
+### 🏗️ 架构分层
+
+新版架构更加模块化，清晰地分为以下层次：
+
+#### 1. 基础抽象层 (`langchain-core`) - 标准化接口
+这是整个生态的基石，定义了所有组件交互的标准协议。
+- **Standard Model Interface**: 无论底层是 OpenAI、Anthropic 还是本地模型，LangChain 提供了统一的调用接口，可以在不修改业务逻辑的情况下无缝切换供应商。
+- **Runnable Protocol**: 所有组件（Prompts, Models, Parsers）都遵循 Runnable 协议，支持统一的 `invoke`, `stream`, `batch` 操作。
+
+#### 2. 编排引擎 (`LangGraph`) - 智能体的“大脑”
+LangChain 的 Agent 现在默认基于 **LangGraph** 构建。
+- **持久化执行 (Durable Execution)**: 支持长运行任务的中断与恢复。
+- **人机交互 (Human-in-the-loop)**: 原生支持人工审核、修改状态等操作。
+- **循环与状态管理**: 专为 Agent 的循环思考模式（Plan-Execute-Refine）设计，解决了 DAG（有向无环图）无法处理复杂决策的问题。
+
+#### 3. 应用层 (`langchain`) - 高级封装
+- **`create_agent`**: 针对最常见的 Agent 模式（如 ReAct, Tool Calling）提供的高级封装。
+- **Integrations**: 提供了数百种预构建的工具和模型集成。

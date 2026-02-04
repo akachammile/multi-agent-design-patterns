@@ -40,7 +40,7 @@ class Config(BaseModel):
     # 模型配置
     # ============================================================
     default_model: str = Field(
-        default="dashscope/qwen3-vl-30b-a3b-thinking",
+        default="gemini/qwen3-vl-30b-a3b-thinking",
         description="默认对话模型",
     )
     fast_model: str = Field(

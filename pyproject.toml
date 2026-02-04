@@ -9,6 +9,7 @@ dependencies = [
     "langchain-google-genai>=4.2.0",
     "langchain-openai>=1.1.6",
     "langgraph>=1.0.5",
+    "langgraph-checkpoint-sqlite>=3.0.3",
     "pydantic-settings>=2.11.0",
     "torch>=2.10.0",
 ]

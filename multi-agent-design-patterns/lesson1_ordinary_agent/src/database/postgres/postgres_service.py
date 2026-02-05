@@ -1,6 +1,8 @@
 import os
 from sqlalchemy import text
 from contextlib import asynccontextmanager
+from .business import Base as BusinessBase
+from .knowledge import Base as KnowledgeBase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from .base import Base
@@ -69,5 +71,5 @@ class PostgreService:
 
     async def create_tables(self):
         async with self.async_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            await conn.run_sync()
+            await conn.run_sync(BusinessBase.metadata.create_all)
+            await conn.run_sync(KnowledgeBase.metadata.create_all)

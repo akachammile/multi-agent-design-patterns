@@ -1,15 +1,19 @@
 # Runnables — LangChain 的核心协议
 
-> `Runnable` 是 LangChain 的绝对核心，且没有之一。
+> `Runnable` 是 LangChain 的**绝对核心**，**且没有之一**。
 > 无论是 Model、Tool、Prompt 还是 Parser，所有组件都实现了 `Runnable` 接口。
-> LangChain 这样设计，我估计是为了不同的情况下，依旧能实现统一的调用方法，是高度抽象的设计。
+> LangChain 这样设计，我估计是有以下原因
+>
+> 1，为了不同的情况下，依旧能实现统一的调用方法，是高度抽象的设计。
+>
+> 2，这里吐槽一下，感觉是没有必要的东西，设计有点过于复杂
 
 ---
 
-## 📦 `runnables/base.py` 核心类一览
+## 📦 `runnables/base.py` 核心类
 
 ```
-Runnable (ABC, Generic[Input, Output])        ← 万物基类（6258 行）
+Runnable (ABC, Generic[Input, Output])        ← 基类
     │
     ├── RunnableSerializable                  ← 可序列化的 Runnable
     │
@@ -50,17 +54,154 @@ Runnable (ABC, Generic[Input, Output])        ← 万物基类（6258 行）
 
 ### 设计初衷
 
-LangChain 早期各组件调用方式不统一，
-`Runnable` 的出现将**所有组件统一为同一套接口**，解决了：
+LangChain 早期各组件调用方式不统一
+`Runnable` 的出现将**所有组件统一为同一套方案**，解决了以下问题：
 
-1. **调用碎片化** → 统一 `invoke`/`stream`/`batch`
-2. **组合很麻烦** → `|` 管道符一行搞定
-3. **异步/流式重复写** → 基类提供默认实现
-4. **类型不透明** → `input_schema`/`output_schema` 自动推断
+Runnable 的源码为以下，但是太长了，这里按下不表，后续再说
+
+```python
+class Runnable(ABC, Generic[Input, Output]):
+    """A unit of work that can be invoked, batched, streamed, transformed and composed.
+
+    Key Methods
+    ===========
+
+    - `invoke`/`ainvoke`: Transforms a single input into an output.
+    - `batch`/`abatch`: Efficiently transforms multiple inputs into outputs.
+    - `stream`/`astream`: Streams output from a single input as it's produced.
+    - `astream_log`: Streams output and selected intermediate results from an
+        input.
+    name: str | None
+    """The name of the `Runnable`. Used for debugging and tracing."""
+```
+
+
+
+1. **调用方法的统一** → 统一 `invoke`/`stream`/`batch`
+
+2. **泛型推断**
+
+   ```python
+   @property
+       def InputType(self) -> type[Input]:  # noqa: N802
+           """Input type.
+   
+           The type of input this `Runnable` accepts specified as a type annotation.
+   
+           Raises:
+               TypeError: If the input type cannot be inferred.
+           """
+           # First loop through all parent classes and if any of them is
+           # a Pydantic model, we will pick up the generic parameterization
+           # from that model via the __pydantic_generic_metadata__ attribute.
+           for base in self.__class__.mro():
+               if hasattr(base, "__pydantic_generic_metadata__"):
+                   metadata = base.__pydantic_generic_metadata__
+                   if (
+                       "args" in metadata
+                       and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
+                   ):
+                       return cast("type[Input]", metadata["args"][0])
+   
+           # If we didn't find a Pydantic model in the parent classes,
+           # then loop through __orig_bases__. This corresponds to
+           # Runnables that are not pydantic models.
+           for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+               type_args = get_args(cls)
+               if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
+                   return cast("type[Input]", type_args[0])
+   
+           msg = (
+               f"Runnable {self.get_name()} doesn't have an inferable InputType. "
+               "Override the InputType property to specify the input type."
+           )
+           raise TypeError(msg)
+   
+       @property
+       def OutputType(self) -> type[Output]:  # noqa: N802
+           """Output Type.
+   
+           The type of output this `Runnable` produces specified as a type annotation.
+   
+           Raises:
+               TypeError: If the output type cannot be inferred.
+           """
+           # First loop through bases -- this will help generic
+           # any pydantic models.
+           for base in self.__class__.mro():
+               if hasattr(base, "__pydantic_generic_metadata__"):
+                   metadata = base.__pydantic_generic_metadata__
+                   if (
+                       "args" in metadata
+                       and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
+                   ):
+                       return cast("type[Output]", metadata["args"][1])
+   
+           for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+               type_args = get_args(cls)
+               if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
+                   return cast("type[Output]", type_args[1])
+   
+           msg = (
+               f"Runnable {self.get_name()} doesn't have an inferable OutputType. "
+               "Override the OutputType property to specify the output type."
+           )
+           raise TypeError(msg)
+   ```
+
+   
+
+3. **组合式的执行** → `|` 其底层重写了 `__or__` 方法
+
+   ```python
+   def __or__(
+           self,
+           other: Runnable[Any, Other]
+           | Callable[[Iterator[Any]], Iterator[Other]]
+           | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
+           | Callable[[Any], Other]
+           | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
+       ) -> RunnableSerializable[Input, Other]:
+           """Runnable "or" operator.
+   
+           Compose this `Runnable` with another object to create a
+           `RunnableSequence`.
+   
+           Args:
+               other: Another `Runnable` or a `Runnable`-like object.
+   
+           Returns:
+               A new `Runnable`.
+           """
+           return RunnableSequence(self, coerce_to_runnable(other))
+   ```
+
+   这使得封装出一个Sequence序列，将上一步的结果作为下一步组件的输出，当形成了 `langchain` 的组件之时例如以下例子。
+
+   ```python
+   chain = prompt | model    # 这里假设 prompt 为chatprompt之类的对象的时候， 由于 Runnable 重写了 __or__ 魔术方法
+   chain = prompt.__or__(model) # 那么以上的动作就变成了这样子，使得其返回了 RunnableSequence 对象，当需要串行其他组件的时候，重复以上的操作即可
+   ```
+
+   **这便是`langchain` 最初串联组件的核心方式。**
+
+   当然这里又出现了一个缺点，这就要回到 `Agent` 的定义上去了。
+
+   什么是 `Agent` , 即 ***An LLM agent runs tools in a loop to achieve a goal***
+
+   key point is ***the loop*** 但是其串行的方式意味着这无法进行自检和循环，这就不符合其定义
+
+   因此 `langchain` 便推出了 `langgraph`  以及后续的大改版， 当然就这是其他模块要说的东西了。 
+
+   ** **
+
+4. **异步/流式重复写** → 基类提供默认实现
+
+5. **类型不透明** → `input_schema`/`output_schema` 自动推断
 
 ---
 
-## 🌟 第二部分：组合原语
+## 🌟 第二部分：组合序列
 
 ### `RunnableSequence` — 串行链（最常用）
 
@@ -99,7 +240,7 @@ streamer = RunnableGenerator(stream_words)  # 支持流式
 
 ---
 
-## 🌟 第三部分：Agent 面试必知
+## 🌟 第三部分：aliment of Agent 
 
 ### `bind()` — Agent 绑定工具的基础
 

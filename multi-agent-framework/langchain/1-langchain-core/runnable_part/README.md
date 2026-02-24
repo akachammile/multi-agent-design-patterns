@@ -201,9 +201,194 @@ class Runnable(ABC, Generic[Input, Output]):
 
 ---
 
-## 🌟 第二部分：组合序列
+## 🌟第二部分：一切都是Serializable之RunnableSerializable
 
-### `RunnableSequence` — 串行链（最常用）
+~~~python
+class RunnableSerializable(Serializable, Runnable[Input, Output]):
+    """Runnable that can be serialized to JSON."""
+
+    name: str | None = None
+    """The name of the `Runnable`.
+
+    Used for debugging and tracing.
+    """
+
+    model_config = ConfigDict(
+        # Suppress warnings from pydantic protected namespaces
+        # (e.g., `model_`)
+        protected_namespaces=(),
+    )
+
+    @override
+    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
+        """Serialize the `Runnable` to JSON.
+
+        Returns:
+            A JSON-serializable representation of the `Runnable`.
+
+        """
+        dumped = super().to_json()
+        with contextlib.suppress(Exception):
+            dumped["name"] = self.get_name()
+        return dumped
+
+    def configurable_fields(
+        self, **kwargs: AnyConfigurableField
+    ) -> RunnableSerializable[Input, Output]:
+        """Configure particular `Runnable` fields at runtime.
+
+        Args:
+            **kwargs: A dictionary of `ConfigurableField` instances to configure.
+
+        Raises:
+            ValueError: If a configuration key is not found in the `Runnable`.
+
+        Returns:
+            A new `Runnable` with the fields configured.
+
+        !!! example
+
+            ```python
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(max_tokens=20).configurable_fields(
+                max_tokens=ConfigurableField(
+                    id="output_token_number",
+                    name="Max tokens in the output",
+                    description="The maximum number of tokens in the output",
+                )
+            )
+
+            # max_tokens = 20
+            print(
+                "max_tokens_20: ", model.invoke("tell me something about chess").content
+            )
+
+            # max_tokens = 200
+            print(
+                "max_tokens_200: ",
+                model.with_config(configurable={"output_token_number": 200})
+                .invoke("tell me something about chess")
+                .content,
+            )
+            ```
+        """
+        # Import locally to prevent circular import
+        from langchain_core.runnables.configurable import (  # noqa: PLC0415
+            RunnableConfigurableFields,
+        )
+
+        model_fields = type(self).model_fields
+        for key in kwargs:
+            if key not in model_fields:
+                msg = (
+                    f"Configuration key {key} not found in {self}: "
+                    f"available keys are {model_fields.keys()}"
+                )
+                raise ValueError(msg)
+
+        return RunnableConfigurableFields(default=self, fields=kwargs)
+
+    def configurable_alternatives(
+        self,
+        which: ConfigurableField,
+        *,
+        default_key: str = "default",
+        prefix_keys: bool = False,
+        **kwargs: Runnable[Input, Output] | Callable[[], Runnable[Input, Output]],
+    ) -> RunnableSerializable[Input, Output]:
+        """Configure alternatives for `Runnable` objects that can be set at runtime.
+
+        Args:
+            which: The `ConfigurableField` instance that will be used to select the
+                alternative.
+            default_key: The default key to use if no alternative is selected.
+            prefix_keys: Whether to prefix the keys with the `ConfigurableField` id.
+            **kwargs: A dictionary of keys to `Runnable` instances or callables that
+                return `Runnable` instances.
+
+        Returns:
+            A new `Runnable` with the alternatives configured.
+
+        !!! example
+
+            ```python
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatAnthropic(
+                model_name="claude-sonnet-4-5-20250929"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI(),
+            )
+
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenAI
+            print(
+                model.with_config(configurable={"llm": "openai"})
+                .invoke("which organization created you?")
+                .content
+            )
+            ```
+        """
+        # Import locally to prevent circular import
+        from langchain_core.runnables.configurable import (  # noqa: PLC0415
+            RunnableConfigurableAlternatives,
+        )
+
+        return RunnableConfigurableAlternatives(
+            which=which,
+            default=self,
+            alternatives=kwargs,
+            default_key=default_key,
+            prefix_keys=prefix_keys,
+        )
+
+~~~
+
+其承载的核心功能就是Serialize所有可Serialize的Runnable的对象，langchain重写了Serializable，填充了关于lc的一堆属性，如下
+
+```python
+    @property
+    def lc_secrets(self) -> dict[str, str]:
+        """A map of constructor argument names to secret ids.
+
+        For example, `{"openai_api_key": "OPENAI_API_KEY"}`
+        """
+        return {}
+
+    @property
+    def lc_attributes(self) -> dict:
+        """List of attribute names that should be included in the serialized kwargs.
+
+        These attributes must be accepted by the constructor.
+
+        Default is an empty dictionary.
+        """
+        return {}
+
+    @classmethod
+    def lc_id(cls) -> list[str]:
+        """Return a unique identifier for this class for serialization purposes.
+
+        The unique identifier is a list of strings that describes the path
+        to the object.
+
+        For example, for the class `langchain.llms.openai.OpenAI`, the id is
+        `["langchain", "llms", "openai", "OpenAI"]`.
+```
+
+等等方法，在langchain中万物皆对象，废话其实，对象就有独一无二的属性。
+
+## 🌟 第三部分：组合序列
+
+### 一，`RunnableSequence` — 串行链（最常用）
 
 ```python
 chain = prompt | model | parser
@@ -213,7 +398,141 @@ chain = prompt | model | parser
 
 `|` 操作符就是 `__or__` 重载，返回一个 `RunnableSequence` 对象。
 
-### `RunnableParallel` — 并行链
+因此，当Runnable对象使用 `__or__` 方法的时候，Runnable对象自己就变成了  `RunnableSequence`
+
+```python
+def __or__(
+        self,
+        other: Runnable[Any, Other]
+        | Callable[[Iterator[Any]], Iterator[Other]]
+        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
+        | Callable[[Any], Other]
+        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
+    ) -> RunnableSerializable[Input, Other]:
+        """Runnable "or" operator.
+
+        Compose this `Runnable` with another object to create a
+        `RunnableSequence`.
+
+        Args:
+            other: Another `Runnable` or a `Runnable`-like object.
+
+        Returns:
+            A new `Runnable`.
+        """
+        return RunnableSequence(self, coerce_to_runnable(other))
+```
+
+这里`coerce_to_runnable` 会把类Runnable的所有类转成Runnable, 也是为了统一
+
+### 二，`RunnableParallel` — 并行链
+
+官方在注释中写明了
+
+***  ***
+
+***RunnableParallel is one of the two main composition primitives***
+
+嘛意思呢？
+
+大白话就是，RunnalbeParallel是 非常重要组合件之一，另外一个是嘛呢，就是上面的RunnableSequenece 
+
+在这里说下这两种方式有何不同
+
+**我们之前提到过了，RunnableSequence 是 Runnable 调用 or 方法后返回的结果，那么 Sequence 究竟产生了一个什么结果呢？**
+
+```python
+first: Runnable[Input, Any]
+    """The first `Runnable` in the sequence."""
+    middle: list[Runnable[Any, Any]] = Field(default_factory=list)
+    """The middle `Runnable` in the sequence."""
+    last: Runnable[Any, Output]
+    """The last `Runnable` in the sequence."""
+
+    def __init__(
+        self,
+        *steps: RunnableLike,
+        name: str | None = None,
+        first: Runnable[Any, Any] | None = None,
+        middle: list[Runnable[Any, Any]] | None = None,
+        last: Runnable[Any, Any] | None = None,
+    ) -> None:
+        """Create a new `RunnableSequence`.
+
+        Args:
+            steps: The steps to include in the sequence.
+            name: The name of the `Runnable`.
+            first: The first `Runnable` in the sequence.
+            middle: The middle `Runnable` objects in the sequence.
+            last: The last `Runnable` in the sequence.
+
+        Raises:
+            ValueError: If the sequence has less than 2 steps.
+        """
+        steps_flat: list[Runnable] = []
+        if not steps and first is not None and last is not None:
+            steps_flat = [first] + (middle or []) + [last]
+        for step in steps:
+            if isinstance(step, RunnableSequence):
+                steps_flat.extend(step.steps)
+            else:
+                steps_flat.append(coerce_to_runnable(step))
+        if len(steps_flat) < _RUNNABLE_SEQUENCE_MIN_STEPS:
+            msg = (
+                f"RunnableSequence must have at least {_RUNNABLE_SEQUENCE_MIN_STEPS} "
+                f"steps, got {len(steps_flat)}"
+            )
+            raise ValueError(msg)
+        super().__init__(
+            first=steps_flat[0],
+            middle=list(steps_flat[1:-1]),
+            last=steps_flat[-1],
+            name=name,
+        )
+```
+
+这里 RunnableSequence 方法，定义了三个参数，first、middle、last 首尾参数都是一个 Runnable 对象，中间是一个 list 的 Runnable 对象。
+
+再结合Sequence这个方法名，显而易见，这是一个顺序的链条，下面再看其是如何拼接的
+
+```
+        steps_flat: list[Runnable] = []
+        if not steps and first is not None and last is not None:
+            steps_flat = [first] + (middle or []) + [last]
+        for step in steps:
+            if isinstance(step, RunnableSequence):
+                steps_flat.extend(step.steps)
+            else:
+                steps_flat.append(coerce_to_runnable(step))
+        if len(steps_flat) < _RUNNABLE_SEQUENCE_MIN_STEPS:
+            msg = (
+                f"RunnableSequence must have at least {_RUNNABLE_SEQUENCE_MIN_STEPS} "
+                f"steps, got {len(steps_flat)}"
+            )
+            raise ValueError(msg)
+        super().__init__(
+            first=steps_flat[0],
+            middle=list(steps_flat[1:-1]),
+            last=steps_flat[-1],
+            name=name,
+        )
+```
+
+
+
+其他的不赘述，要注意一点，就是当，step，即中间的一堆存在时，直接会用extend方法重构下
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```python
 chain = prompt | {"answer": model, "source": retriever}

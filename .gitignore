@@ -52,3 +52,7 @@ cache/
 *.zip
 *.tar
 *.gz
+
+*.jsonl
+*.tsv
+*.csv

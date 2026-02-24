@@ -435,11 +435,11 @@ def __or__(
 
 嘛意思呢？
 
-大白话就是，RunnalbeParallel是 非常重要组合件之一，另外一个是嘛呢，就是上面的RunnableSequenece 
+大白话就是，RunnalbeParallel 是非常重要组合件之一，另外一个是嘛呢，就是上面的RunnableSequenece 
 
 在这里说下这两种方式有何不同
 
-**我们之前提到过了，RunnableSequence 是 Runnable 调用 or 方法后返回的结果，那么 Sequence 究竟产生了一个什么结果呢？**
+**我们之前提到过了，RunnableSequence 是 Runnable 调用 or 方法后返回的结果，那么 Sequence 究竟产生了一个什么结果呢？**看下他的init方法
 
 ```python
 first: Runnable[Input, Any]
@@ -495,7 +495,7 @@ first: Runnable[Input, Any]
 
 再结合Sequence这个方法名，显而易见，这是一个顺序的链条，下面再看其是如何拼接的
 
-```
+```python
         steps_flat: list[Runnable] = []
         if not steps and first is not None and last is not None:
             steps_flat = [first] + (middle or []) + [last]
@@ -520,34 +520,140 @@ first: Runnable[Input, Any]
 
 
 
-其他的不赘述，要注意一点，就是当，step，即中间的一堆存在时，直接会用extend方法重构下
+其他的不赘述，要注意一点，就是当，step，即中间的一堆存在时，直接会用extend方法重构下，最后调用 pydantic 完成整体的验证
 
+相比之下，RunnableParallel 的构建方式就 复杂一点，其规定了形成方式是 key-value 的形式，因此其初始化的时候
 
+形成了的形式，其中 `coerce_to_runnable` 是一个强制转换的方法
 
-
-
-
-
-
-
-
+```python
+steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
+```
 
 
 
 ```python
-chain = prompt | {"answer": model, "source": retriever}
-# 字典字面量自动变成 RunnableParallel
-# 同一个输入同时发给 model 和 retriever，结果合成一个 dict
+class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
+    """Runnable that runs a mapping of `Runnable`s in parallel.
+
+    Returns a mapping of their outputs.
+
+    `RunnableParallel` is one of the two main composition primitives,
+    alongside `RunnableSequence`. It invokes `Runnable`s concurrently, providing the
+    same input to each.
+
+    A `RunnableParallel` can be instantiated directly or by using a dict literal
+    within a sequence.
+
+    Here is a simple example that uses functions to illustrate the use of
+    `RunnableParallel`:
+
+        ```python
+        from langchain_core.runnables import RunnableLambda
+
+
+        def add_one(x: int) -> int:
+            return x + 1
+
+
+        def mul_two(x: int) -> int:
+            return x * 2
+
+
+        def mul_three(x: int) -> int:
+            return x * 3
+
+
+        runnable_1 = RunnableLambda(add_one)
+        runnable_2 = RunnableLambda(mul_two)
+        runnable_3 = RunnableLambda(mul_three)
+
+        sequence = runnable_1 | {  # this dict is coerced to a RunnableParallel
+            "mul_two": runnable_2,
+            "mul_three": runnable_3,
+        }
+        # Or equivalently:
+        # sequence = runnable_1 | RunnableParallel(
+        #     {"mul_two": runnable_2, "mul_three": runnable_3}
+        # )
+        # Also equivalently:
+        # sequence = runnable_1 | RunnableParallel(
+        #     mul_two=runnable_2,
+        #     mul_three=runnable_3,
+        # )
+
+        sequence.invoke(1)
+        await sequence.ainvoke(1)
+
+        sequence.batch([1, 2, 3])
+        await sequence.abatch([1, 2, 3])
+        ```
+
+    `RunnableParallel` makes it easy to run `Runnable`s in parallel. In the below
+    example, we simultaneously stream output from two different `Runnable` objects:
+
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.runnables import RunnableParallel
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI()
+        joke_chain = (
+            ChatPromptTemplate.from_template("tell me a joke about {topic}") | model
+        )
+        poem_chain = (
+            ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
+            | model
+        )
+
+        runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
+
+        # Display stream
+        output = {key: "" for key, _ in runnable.output_schema()}
+        for chunk in runnable.stream({"topic": "bear"}):
+            for key in chunk:
+                output[key] = output[key] + chunk[key].content
+            print(output)  # noqa: T201
+        ```
+    """
+
+    steps__: Mapping[str, Runnable[Input, Any]]
+
+    def __init__(
+        self,
+        steps__: Mapping[
+            str,
+            Runnable[Input, Any]
+            | Callable[[Input], Any]
+            | Mapping[str, Runnable[Input, Any] | Callable[[Input], Any]],
+        ]
+        | None = None,
+        **kwargs: Runnable[Input, Any]
+        | Callable[[Input], Any]
+        | Mapping[str, Runnable[Input, Any] | Callable[[Input], Any]],
+    ) -> None:
+        """Create a `RunnableParallel`.
+
+        Args:
+            steps__: The steps to include.
+            **kwargs: Additional steps to include.
+
+        """
+        merged = {**steps__} if steps__ is not None else {}
+        merged.update(kwargs)
+        super().__init__(
+            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
+        )
 ```
 
-### `RunnableLambda` — 普通函数包装器
+### 三，`RunnableLambda` — 普通函数包装器
 
 ```python
 add_one = RunnableLambda(lambda x: x + 1)
 chain = add_one | model  # 普通函数也能参与链式调用
 ```
 
-### `RunnableGenerator` — 生成器包装器
+### 四，`RunnableGenerator` — 生成器包装器
 
 ```python
 def stream_words(input):

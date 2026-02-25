@@ -8,7 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 prompt = ChatPromptTemplate.from_template("Tell me a short joke about{topic}")
 model = ChatOpenAI(
     model="qwen3.5-flash-2026-02-23",
-    api_key="sk-b86e4fd521754a80b0210a8eab6f4d9c",
+    api_key="",
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
 )
 output_parser = StrOutputParser()

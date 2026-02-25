@@ -803,7 +803,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
 
 
 
-## 🌟 第三部分：aliment of Agent 
+## 🌟 第四部分：aliment of Runnable
 
 ### `bind()` — Agent 绑定工具的基础
 
@@ -819,16 +819,7 @@ safe_model = model.with_retry(stop_after_attempt=3)
 safe_model = gpt4.with_fallbacks([gpt35, local_model])
 ```
 
-### LCEL 的现状（2025）
 
-LCEL（`A | B | C` 语法）没有被废弃，但已**从台前退到台后**：
-
-| 层级 | 用什么 | 说明 |
-| :--- | :--- | :--- |
-| **Agent 编排层** | **LangGraph** | 状态机 + 图（支持循环和分支） |
-| **单步执行层** | **LCEL** | 在 LangGraph 节点内部 `prompt \| model \| parser` |
-
-LCEL 适合线性链，但 Agent 需要循环（思考→行动→观察→再思考），这需要 LangGraph。
 
 ---
 

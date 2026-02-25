@@ -388,7 +388,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 
 ## 🌟 第三部分：组合序列
 
-### 一，`RunnableSequence` — 串行链（最常用）
+### 一，`RunnableSequence` — 串行链
 
 ```python
 chain = prompt | model | parser
@@ -587,73 +587,78 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         sequence.batch([1, 2, 3])
         await sequence.abatch([1, 2, 3])
-        ```
+```
 
-    `RunnableParallel` makes it easy to run `Runnable`s in parallel. In the below
-    example, we simultaneously stream output from two different `Runnable` objects:
+~~~python
+`RunnableParallel` makes it easy to run `Runnable`s in parallel. In the below
+example, we simultaneously stream output from two different `Runnable` objects:
 
-        ```python
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_core.runnables import RunnableParallel
-        from langchain_openai import ChatOpenAI
+    ```python
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.runnables import RunnableParallel
+    from langchain_openai import ChatOpenAI
 
-        model = ChatOpenAI()
-        joke_chain = (
-            ChatPromptTemplate.from_template("tell me a joke about {topic}") | model
-        )
-        poem_chain = (
-            ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
-            | model
-        )
+    model = ChatOpenAI()
+    joke_chain = (
+        ChatPromptTemplate.from_template("tell me a joke about {topic}") | model
+    )
+    poem_chain = (
+        ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
+        | model
+    )
 
-        runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
+    runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
 
-        # Display stream
-        output = {key: "" for key, _ in runnable.output_schema()}
-        for chunk in runnable.stream({"topic": "bear"}):
-            for key in chunk:
-                output[key] = output[key] + chunk[key].content
-            print(output)  # noqa: T201
-        ```
-    """
+    # Display stream
+    output = {key: "" for key, _ in runnable.output_schema()}
+    for chunk in runnable.stream({"topic": "bear"}):
+        for key in chunk:
+            output[key] = output[key] + chunk[key].content
+        print(output)  # noqa: T201
+    ```
 
-    steps__: Mapping[str, Runnable[Input, Any]]
 
-    def __init__(
-        self,
-        steps__: Mapping[
-            str,
-            Runnable[Input, Any]
-            | Callable[[Input], Any]
-            | Mapping[str, Runnable[Input, Any] | Callable[[Input], Any]],
-        ]
-        | None = None,
-        **kwargs: Runnable[Input, Any]
+steps__: Mapping[str, Runnable[Input, Any]]
+
+def __init__(
+    self,
+    steps__: Mapping[
+        str,
+        Runnable[Input, Any]
         | Callable[[Input], Any]
         | Mapping[str, Runnable[Input, Any] | Callable[[Input], Any]],
-    ) -> None:
-        """Create a `RunnableParallel`.
+    ]
+    | None = None,
+    **kwargs: Runnable[Input, Any]
+    | Callable[[Input], Any]
+    | Mapping[str, Runnable[Input, Any] | Callable[[Input], Any]],
+) -> None:
+    """Create a `RunnableParallel`.
 
-        Args:
-            steps__: The steps to include.
-            **kwargs: Additional steps to include.
+    Args:
+        steps__: The steps to include.
+        **kwargs: Additional steps to include.
 
-        """
-        merged = {**steps__} if steps__ is not None else {}
-        merged.update(kwargs)
-        super().__init__(
-            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
-        )
-```
+    """
+    merged = {**steps__} if steps__ is not None else {}
+    merged.update(kwargs)
+    super().__init__(
+        steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
+   )
+~~~
+`RunnableParallel` 的初始化运行是在invoke阶段完成的(也是废话)，其实都是这个阶段运行的，只不过是这个特殊一点，
 
-### 三，`RunnableLambda` — 普通函数包装器
+值得注意的是，其底 RunnableParallel 底层用了一个 继承了 `ThreadPoolExecutor` 的 · `ContextThreadPoolExecutor` 
 
-```python
-add_one = RunnableLambda(lambda x: x + 1)
-chain = add_one | model  # 普通函数也能参与链式调用
-```
+其同步方法用到的是线程池的方案，同时保留了上下文的信息，具体是怎么做到了呢？
 
-### 四，`RunnableGenerator` — 生成器包装器
+
+
+
+
+### 三，`RunnableGenerator` — 生成器包装器
+
+该部分不太重要，主要是包装一个底层的迭代器了，其他的无他
 
 ```python
 def stream_words(input):
@@ -664,6 +669,139 @@ streamer = RunnableGenerator(stream_words)  # 支持流式
 ```
 
 ---
+
+### 四，`RunnableEach` — **Each 运行单元**
+
+该部分底层用到的是asynio的gather方法，然后遍历`config`
+
+```python
+class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
+    """RunnableEachBase class.
+
+    `Runnable` that calls another `Runnable` for each element of the input sequence.
+
+    Use only if creating a new `RunnableEach` subclass with different `__init__`
+    args.
+
+    See documentation for `RunnableEach` for more details.
+
+    """
+
+    bound: Runnable[Input, Output]
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @property
+    @override
+    def InputType(self) -> Any:
+        return list[self.bound.InputType]  # type: ignore[name-defined]
+
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+        return create_model_v2(
+            self.get_name("Input"),
+            root=(
+                list[self.bound.get_input_schema(config)],  # type: ignore[misc]
+                None,
+            ),
+            # create model needs access to appropriate type annotations to be
+            # able to construct the Pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
+            module_name=self.__class__.__module__,
+        )
+
+    @property
+    @override
+    def OutputType(self) -> type[list[Output]]:
+        return list[self.bound.OutputType]  # type: ignore[name-defined]
+
+    @override
+    def get_output_schema(
+        self, config: RunnableConfig | None = None
+    ) -> type[BaseModel]:
+        schema = self.bound.get_output_schema(config)
+        return create_model_v2(
+            self.get_name("Output"),
+            root=list[schema],  # type: ignore[valid-type]
+            # create model needs access to appropriate type annotations to be
+            # able to construct the Pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
+            module_name=self.__class__.__module__,
+        )
+
+    @property
+    @override
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
+        return self.bound.config_specs
+
+    @override
+    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
+        return self.bound.get_graph(config)
+
+    @classmethod
+    @override
+    def is_lc_serializable(cls) -> bool:
+        """Return `True` as this class is serializable."""
+        return True
+
+    @classmethod
+    @override
+    def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "schema", "runnable"]`
+        """
+        return ["langchain", "schema", "runnable"]
+
+    def _invoke(
+        self,
+        inputs: list[Input],
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+        **kwargs: Any,
+    ) -> list[Output]:
+        configs = [
+            patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
+        ]
+        return self.bound.batch(inputs, configs, **kwargs)
+
+    @override
+    def invoke(
+        self, input: list[Input], config: RunnableConfig | None = None, **kwargs: Any
+    ) -> list[Output]:
+        return self._call_with_config(self._invoke, input, config, **kwargs)
+
+    async def _ainvoke(
+        self,
+        inputs: list[Input],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+        **kwargs: Any,
+    ) -> list[Output]:
+        configs = [
+            patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
+        ]
+        return await self.bound.abatch(inputs, configs, **kwargs)
+
+    @override
+    async def ainvoke(
+        self, input: list[Input], config: RunnableConfig | None = None, **kwargs: Any
+    ) -> list[Output]:
+        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+```
+
+
 
 ## 🌟 第三部分：aliment of Agent 
 

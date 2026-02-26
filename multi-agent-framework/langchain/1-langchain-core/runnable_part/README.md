@@ -30,7 +30,7 @@ Runnable (ABC, Generic[Input, Output])        ← 基类
 
 ---
 
-## 🌟 第一部分：Runnable 接口定义
+## 🌟🌟🌟 第一部分：Runnable 接口定义（超级重要）
 
 ### 核心方法（4 类）
 
@@ -40,17 +40,55 @@ Runnable (ABC, Generic[Input, Output])        ← 基类
 | | `stream` / `astream` | 流式输出 |
 | | `batch` / `abatch` | 批量并发 |
 | | `transform` / `atransform` | 流式输入 → 流式输出 |
-| **组合** | `__or__` (`\|`) | 串行组合：`A \| B \| C` → `RunnableSequence` |
+| **组合** | `__or__` (`|`) | 串行组合：`A \| B \| C` → `RunnableSequence` |
 | | `pipe()` | 同上，方法调用版 |
 | | `pick()` | 从 dict 输出中选 key |
 | | `assign()` | 给 dict 输出添加新 key |
+| | `⭐⭐⭐coerce_to_runnable()` | 组合所有继承自 `Runnable` 的对象，是组合核心 |
 | **装饰** | `bind()` | 绑定默认参数（Agent 绑定工具的基础） |
 | | `with_config()` | 绑定运行时配置 |
 | | `with_retry()` | 失败自动重试 |
 | | `with_fallbacks()` | 失败切换备用方案 |
 | | `with_listeners()` | 添加生命周期钩子 |
 | **内省** | `input_schema` / `output_schema` | 获取输入/输出的 Pydantic Schema |
-| | `get_graph()` | 获取图结构（可视化用） |
+| | `⭐⭐get_graph()` | 底层核心转向langGraph后的重要方法，主题用于生成和获取图结构 |
+
+#### 一，ainvoke方法（这里都解说异步）
+
+```
+
+```
+
+
+
+```python
+# Runnable的invoke方法，即单个的任务
+
+async def ainvoke(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Output:
+        """Transform a single input into an output.
+
+        Args:
+            input: The input to the `Runnable`.
+            config: A config to use when invoking the `Runnable`.
+
+                The config supports standard keys like `'tags'`, `'metadata'` for
+                tracing purposes, `'max_concurrency'` for controlling how much work to
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
+
+        Returns:
+            The output of the `Runnable`.
+        """
+        return await run_in_executor(config, self.invoke, input, config, **kwargs)
+```
+
+
 
 ### 设计初衷
 
@@ -658,7 +696,51 @@ def __init__(
 
 ### 三，`RunnableGenerator` — 生成器包装器
 
-该部分不太重要，主要是包装一个底层的迭代器了，其他的无他
+该部分不太重要，主要是包装一个底层的迭代器了，其他的无他，主要目的是便于用户自行定义Stream的后处理过程，其官方给出了使用样例
+
+~~~python
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.runnables import RunnableGenerator, RunnableLambda
+        from langchain_openai import ChatOpenAI
+        from langchain_core.output_parsers import StrOutputParser
+
+
+        model = ChatOpenAI()
+        chant_chain = (
+            ChatPromptTemplate.from_template("Give me a 3 word chant about {topic}")
+            | model
+            | StrOutputParser()
+        )
+
+
+        def character_generator(input: Iterator[str]) -> Iterator[str]:
+            for token in input:
+                if "," in token or "." in token:
+                    yield "👏" + token
+                else:
+                    yield token
+
+
+        runnable = chant_chain | character_generator
+        assert type(runnable.last) is RunnableGenerator
+        "".join(runnable.stream({"topic": "waste"}))  # Reduce👏, Reuse👏, Recycle👏.
+
+
+        # Note that RunnableLambda can be used to delay streaming of one step in a
+        # sequence until the previous step is finished:
+        def reverse_generator(input: str) -> Iterator[str]:
+            # Yield characters of input in reverse order.
+            for character in input[::-1]:
+                yield character
+
+
+        runnable = chant_chain | RunnableLambda(reverse_generator)
+        "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
+        ```
+~~~
+
+
 
 ```python
 def stream_words(input):
@@ -801,23 +883,39 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 ```
 
+### 五，`RunnableLambda` — **接入单元**
+
+RunnableLambda 的核心就是把普通函数包装成 Runnable 对象，让它具备统一接口：invoke/ainvoke/batch/stream，并能参与 | 链式组合、配置
+
+具体看到其一堆的init方法就明白了
+
+### 
+
+### 🌟 第四部分：大总结
 
 
-## 🌟 第四部分：aliment of Runnable
 
-### `bind()` — Agent 绑定工具的基础
+总的来说，Runnable 的 base 是 langchain 这个项目核心中的核心，其定义了 langchain 中可执行对象 Runnable 所有的行为以及组合方式（运行方式） Sequence 和 Map / Parallel 
 
-```python
-model_with_tools = model.bind_tools(tools)
-# 底层就是 bind()，将工具 schema 作为默认参数绑定到模型上
-```
+即顺序执行和并发执行，
 
-### `with_retry()` + `with_fallbacks()` — 容错机制
 
-```python
-safe_model = model.with_retry(stop_after_attempt=3)
-safe_model = gpt4.with_fallbacks([gpt35, local_model])
-```
+
+langchain 该部分的设计哲学如下，
+
+1，其通过高度抽象的继承等方法，将所有的执行体（chain），组合成Runnable对象，便于统一性的处理结果。
+
+
+
+2，高度解耦，例如initialize，完全依赖了 pydantic 模型，也就意味着完全和执行方法进行了解耦，这样就便于参数和状态的改变，同时使用config/callback 上下文和递归执行语义，实现上下文的低度耦合。
+
+
+
+3，缺点： 抽象程度太高了，也太深，分支也太多了，不同类型的需求，比如并发、顺序、迭代等，会经过好几个patch，感觉不是很必要，而且看代码累个半死，但是组合能力上挺强的，避免了高度的耦合设计，总觉的对agent来说，是个复杂的设计。因为agent只是个无线循环，直到完成用户任务的工具，这么复杂的设计，没有必要。
+
+
+
+
 
 
 

@@ -8,10 +8,13 @@ class BaseContext:
     """
 
     system_prompt: str = ""
-    history: list = []
+    tool: list = []
 
-    def __init__(self):
+    def update(self, *kwargs):
         pass
 
     def get_context(self):
+        pass
+
+    def to_json(self):
         pass

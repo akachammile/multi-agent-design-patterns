@@ -1,43 +1,45 @@
-# AGENTS.md
+﻿# Repository Guidelines
 
-## Scope
-- This file applies to the whole repository: `E:\1_LLM_PROJECT\multi-agent-design-patterns`.
+## Project Structure & Module Organization
+This repository is a Python workspace with multiple learning modules. Top-level folders group topics by domain:
+- `multi-agent-design-patterns/`: core pattern demos (for example `lesson1_ordinary_agent/src/agents`, `src/configs`, `src/utils`).
+- `multi-agent-framework/`, `multi-agent-memory/`, `llm-rag/`, `llm-lab/`: framework, memory, RAG, and model labs.
+- `vibecoding-workshop/`: workshop notes/examples.
+- Root config files: `pyproject.toml`, `uv.lock`, `.env.example`.
 
-## Communication
-- Default response language: Chinese.
-- Keep explanations concise and practical.
-- For code changes, provide: what changed, why, and how to verify.
+Prefer adding new code inside the closest existing module instead of creating new top-level directories.
 
-## Environment
-- Python version: `>=3.13` (see `pyproject.toml`).
-- Package/tooling preference: `uv`.
+## Build, Test, and Development Commands
+Use `uv` for all local workflows:
+- `uv sync`: install/sync dependencies from `pyproject.toml` and `uv.lock`.
+- `uv run python <path_to_script.py>`: run a module or example script.
+- `uv run ruff check .`: run lint checks.
+- `uv run ruff format .`: auto-format code.
+- `uv run pytest -q <target_path>`: run targeted tests first (avoid running the whole repo by default).
 
-## Common Commands
-- Sync dependencies: `uv sync`
-- Run an example module: `uv run python <path_to_script.py>`
-- Run tests (if tests exist): `uv run pytest -q`
-- Lint/format (if configured): `uv run ruff check .` and `uv run ruff format .`
+Example: `uv run pytest -q multi-agent-framework/langchain/1-langchain-core/runnable_part`.
 
-## Coding Rules
-- Prefer minimal, targeted changes; avoid broad refactors unless requested.
-- Follow existing project structure and naming conventions.
-- Do not introduce secrets, tokens, or hardcoded credentials.
+## Coding Style & Naming Conventions
+- Python version: `>=3.13`.
+- Ruff settings: line length `100`, double quotes, spaces for indentation.
+- Naming: `snake_case` for functions/files, `PascalCase` for classes, `UPPER_CASE` for constants.
+- Keep changes minimal and local; avoid broad refactors unless requested.
 - Add comments only for non-obvious logic.
-- Keep files ASCII unless non-ASCII is already required.
 
-## Safety Boundaries
-- Do not modify lockfiles or dependencies unless task requires it.
-- Do not change CI/release/deployment files unless explicitly requested.
-- Do not delete files or run destructive git commands unless explicitly requested.
+## Testing Guidelines
+Pytest is used where tests exist (many modules are example-driven and may not have full coverage).
+- Place tests near the related module or in its existing test location.
+- Test file names: `test_*.py`.
+- Run smallest relevant test scope before broader runs.
 
-## Validation
-- For functional code changes:
-  1. Run the smallest relevant check first.
-  2. If available, run targeted tests before full test suite.
-  3. Report commands run and key results.
-- If local validation cannot run, clearly state why.
+## Commit & Pull Request Guidelines
+Recent history follows Conventional Commit prefixes, mainly `feat:`, `docs:`, `chore:` (and occasionally `fix:`).
+- Commit format: `<type>(optional-scope): <short description>`.
+- Keep one logical change per commit.
+- PRs should include: summary, affected paths, validation commands/results, and linked issue (if any).
+- Include screenshots only for UI/documentation visuals.
 
-## Collaboration Preferences
-- When requirements are ambiguous, make a reasonable assumption and proceed.
-- Surface risks/tradeoffs early if they can affect correctness.
-- Keep PR-style summaries short and actionable.
+## Security & Configuration Tips
+- Do not commit secrets; use `.env.example` as template.
+- Do not modify lockfiles/dependencies unless the task requires it.
+- Avoid changing CI/release files unless explicitly requested.

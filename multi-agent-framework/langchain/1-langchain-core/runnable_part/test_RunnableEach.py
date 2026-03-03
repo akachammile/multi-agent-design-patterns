@@ -1,8 +1,9 @@
 import asyncio
+
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables.base import RunnableEach
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 
 
 prompt = ChatPromptTemplate.from_template("Tell me a short joke about{topic}")

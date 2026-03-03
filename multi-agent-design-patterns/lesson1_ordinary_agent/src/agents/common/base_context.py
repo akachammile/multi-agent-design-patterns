@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from configs.config import config as sys_config
 
 
 @dataclass
@@ -10,11 +11,21 @@ class BaseContext:
     system_prompt: str = ""
     tool: list = []
 
-    def update(self, *kwargs):
-        pass
+    model = field(default=sys_config.default_model, description="默认模型")
+
+    def update(self, data: dict):
+        for key, value in data.items():
+            if getattr(self, key):
+                setattr(self, key, value)
 
     def get_context(self):
         pass
 
     def to_json(self):
+        pass
+
+    def sav_to_file(self):
+        pass
+
+    def load_from_file(self):
         pass

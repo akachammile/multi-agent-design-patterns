@@ -1,9 +1,10 @@
+from pydantic import BaseModel, Field
 from dataclasses import dataclass, field
 from configs.config import config as sys_config
 
 
 @dataclass
-class BaseContext:
+class BaseContext(BaseModel):
     """
     基础上下文
     """
@@ -11,7 +12,7 @@ class BaseContext:
     system_prompt: str = ""
     tool: list = []
 
-    model = field(default=sys_config.default_model, description="默认模型")
+    model: str = Field(default=sys_config.default_model, description="默认模型")
 
     def update(self, data: dict):
         for key, value in data.items():

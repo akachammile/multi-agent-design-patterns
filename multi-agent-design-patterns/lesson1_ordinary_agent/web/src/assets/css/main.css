@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans:
+    "Plus Jakarta Sans", "Manrope", "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
+
+  --bg-canvas: #f4f7fb;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #eef2f8;
+
+  --text-primary: #1e2530;
+  --text-secondary: #5b6878;
+  --text-muted: #7b8795;
+
+  --brand-500: #146ef5;
+  --brand-600: #0f5bd0;
+  --brand-soft: #e9f2ff;
+
+  --success-500: #1d9c5f;
+  --warning-500: #da8b14;
+  --danger-500: #d63d4f;
+
+  --border-default: #d7dee8;
+  --border-strong: #b9c6d6;
+
+  --shadow-sm: 0 8px 24px rgba(20, 38, 66, 0.04);
+  --shadow-md: 0 16px 48px rgba(20, 38, 66, 0.08);
+
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100%;
+}
+
+html {
+  font-size: 16px;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  line-height: 1.5;
+  background:
+    radial-gradient(circle at 8% 0%, #ffffff 0%, #f5f9ff 28%, transparent 52%),
+    radial-gradient(circle at 90% 12%, #eff6ff 0%, transparent 34%),
+    var(--bg-canvas);
+}
+
+a {
+  color: var(--brand-500);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--brand-600);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+code {
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: var(--bg-subtle);
+  color: #223446;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 0.6rem 1.4rem;
+  background: var(--brand-500);
+  color: #fff;
+  font-weight: 600;
+  transition:
+    transform 0.15s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+button:hover {
+  background: var(--brand-600);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand-500) 35%, transparent);
+  outline-offset: 2px;
+}
+
+input,
+textarea,
+select {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  padding: 0.6rem 1rem;
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--border-strong);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand-500) 20%, #fff);
+  color: var(--text-primary);
+}
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 2vw + 0.4rem, 2.2rem);
+}
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--border-default) 75%, #fff);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  body {
+    background: var(--bg-canvas);
+  }
+
+  .app-shell {
+    padding: 1rem;
+  }
+}

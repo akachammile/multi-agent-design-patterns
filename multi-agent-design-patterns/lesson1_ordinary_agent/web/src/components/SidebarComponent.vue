@@ -1,45 +1,55 @@
-<script setup lang="ts">
-import { ref } from 'vue'
+﻿<script setup lang="ts">
+import { ref } from "vue"
 
-// 控制侧边栏展开/收起的状态
 const isCollapsed = ref(false)
+const activeMenu = ref("overview")
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
+
+const handleSelect = (key: string) => {
+  activeMenu.value = key
+}
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ 'collapsed': isCollapsed }">
+  <aside class="sidebar" :class="{ collapsed: isCollapsed }">
     <div class="sidebar-header">
-      <h3 v-show="!isCollapsed">菜单导航</h3>
-      <button class="toggle-btn" @click="toggleSidebar">
-        {{ isCollapsed ? '👉' : '👈' }}
-      </button>
+      <div class="brand" v-show="!isCollapsed">
+        <span class="brand-dot" />
+        <span class="brand-text">Agent Console</span>
+      </div>
+      <el-button class="toggle-btn" circle text @click="toggleSidebar">
+        <el-icon>
+          <Expand v-if="isCollapsed" />
+          <Fold v-else />
+        </el-icon>
+      </el-button>
     </div>
-    
-    <nav class="sidebar-nav">
-      <ul>
-        <li>
-          <a href="#">
-            <span class="icon">🏠</span>
-            <span class="text" v-show="!isCollapsed">首页概览</span>
-          </a>
-        </li>
-        <li>
-          <a href="#">
-            <span class="icon">📊</span>
-            <span class="text" v-show="!isCollapsed">数据分析</span>
-          </a>
-        </li>
-        <li>
-          <a href="#">
-            <span class="icon">⚙️</span>
-            <span class="text" v-show="!isCollapsed">系统设置</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
+
+    <el-scrollbar class="sidebar-scroll">
+      <el-menu class="sidebar-menu" :collapse="isCollapsed" :default-active="activeMenu" @select="handleSelect">
+        <el-menu-item index="overview">
+          <el-icon>
+            <House />
+          </el-icon>
+          <template #title>首页概览</template>
+        </el-menu-item>
+        <el-menu-item index="analysis">
+          <el-icon>
+            <DataAnalysis />
+          </el-icon>
+          <template #title>数据分析</template>
+        </el-menu-item>
+        <el-menu-item index="settings">
+          <el-icon>
+            <Setting />
+          </el-icon>
+          <template #title>系统设置</template>
+        </el-menu-item>
+      </el-menu>
+    </el-scrollbar>
   </aside>
 </template>
 
@@ -47,15 +57,17 @@ const toggleSidebar = () => {
 .sidebar {
   width: 240px;
   height: 100vh;
-  background-color: #2c3e50;
-  color: #ecf0f1;
+  background: #ffffff;
+  color: #303133;
   transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
+  border-right: 1px solid #e4e7ed;
 }
 
 .sidebar.collapsed {
-  width: 64px;
+  width: 68px;
+  /* 给折叠后的图标留出合适的空间 */
 }
 
 .sidebar-header {
@@ -64,69 +76,98 @@ const toggleSidebar = () => {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  border-bottom: 1px solid #34495e;
+  border-bottom: 1px solid #e4e7ed;
+  overflow: hidden;
 }
 
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 16px;
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   white-space: nowrap;
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #67c23a;
+  box-shadow: 0 0 8px rgba(103, 194, 58, 0.4);
+}
+
+.brand-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px;
-  color: #ecf0f1;
+  color: #909399;
 }
 
 .toggle-btn:hover {
-  opacity: 0.8;
+  color: #303133;
+  background-color: #f4f4f5;
 }
 
-.sidebar-nav {
+.sidebar-scroll {
   flex: 1;
-  overflow-y: auto;
-  padding-top: 10px;
 }
 
-.sidebar-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+:deep(.sidebar-menu) {
+  border-right: none;
+  background: transparent;
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: #f2f6fc;
+  --el-menu-text-color: #606266;
+  --el-menu-active-color: #146ef5;
 }
 
-.sidebar-nav li a {
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  color: #bdc3c7;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+:deep(.sidebar-menu .el-menu-item) {
+  height: 46px;
+  margin: 8px 12px;
+  border-radius: 10px;
 }
 
-.sidebar-nav li a:hover {
-  background-color: #34495e;
-  color: #fff;
-}
-
-.icon {
+:deep(.sidebar-menu .el-menu-item .el-icon) {
   font-size: 20px;
-  margin-right: 12px;
+}
+
+:deep(.sidebar-menu .el-menu-item.is-active) {
+  background: #e9f2ff;
+  font-weight: 600;
+}
+
+:deep(.sidebar-menu.el-menu--collapse) {
+  width: 68px;
+}
+
+:deep(.sidebar-menu.el-menu--collapse .el-menu-item) {
+  margin: 8px 12px;
+  padding: 0 !important;
   display: flex;
-  align-items: center;
   justify-content: center;
-  width: 24px;
+  align-items: center;
+  width: calc(100% - 24px);
+  /* 让背景框居中对齐 */
 }
 
-.sidebar.collapsed .sidebar-nav li a {
-  padding: 12px 20px; /* 保持内边距一致 */
+/* Element Plus 折叠时，默认使用 el-tooltip 包装图标，需要强制其内联样式居中 */
+:deep(.sidebar-menu.el-menu--collapse .el-menu-tooltip__trigger),
+:deep(.sidebar-menu.el-menu--collapse .el-tooltip__trigger) {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 0 !important;
 }
 
-.sidebar.collapsed .icon {
-  margin-right: 0; /* 折叠时去掉右边距，让图标居中 */
+:deep(.sidebar-menu.el-menu--collapse .el-icon) {
+  margin: 0 !important;
 }
 </style>

@@ -1,12 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref } from "vue"
+import { Home, LineChart, Settings } from 'lucide-vue-next'
 
-const isCollapsed = ref(false)
 const activeMenu = ref("overview")
-
-const toggleSidebar = () => {
-  isCollapsed.value = !isCollapsed.value
-}
 
 const handleSelect = (key: string) => {
   activeMenu.value = key
@@ -14,160 +10,129 @@ const handleSelect = (key: string) => {
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ collapsed: isCollapsed }">
-    <div class="sidebar-header">
-      <div class="brand" v-show="!isCollapsed">
-        <span class="brand-dot" />
-        <span class="brand-text">Agent Console</span>
+  <aside class="capsule-sidebar">
+    <!-- 导航菜单 -->
+    <div class="sidebar-nav">
+      <div class="nav-item" :class="{ active: activeMenu === 'overview' }" @click="handleSelect('overview')"
+        data-title="首页概览">
+        <Home :size="20" :stroke-width="2.5" />
       </div>
-      <el-button class="toggle-btn" circle text @click="toggleSidebar">
-        <el-icon>
-          <Expand v-if="isCollapsed" />
-          <Fold v-else />
-        </el-icon>
-      </el-button>
+      <div class="nav-item" :class="{ active: activeMenu === 'analysis' }" @click="handleSelect('analysis')"
+        data-title="数据分析">
+        <LineChart :size="20" :stroke-width="2.5" />
+      </div>
+      <div class="nav-item" :class="{ active: activeMenu === 'settings' }" @click="handleSelect('settings')"
+        data-title="系统设置">
+        <Settings :size="20" :stroke-width="2.5" />
+      </div>
     </div>
-
-    <el-scrollbar class="sidebar-scroll">
-      <el-menu class="sidebar-menu" :collapse="isCollapsed" :default-active="activeMenu" @select="handleSelect">
-        <el-menu-item index="overview">
-          <el-icon>
-            <House />
-          </el-icon>
-          <template #title>首页概览</template>
-        </el-menu-item>
-        <el-menu-item index="analysis">
-          <el-icon>
-            <DataAnalysis />
-          </el-icon>
-          <template #title>数据分析</template>
-        </el-menu-item>
-        <el-menu-item index="settings">
-          <el-icon>
-            <Setting />
-          </el-icon>
-          <template #title>系统设置</template>
-        </el-menu-item>
-      </el-menu>
-    </el-scrollbar>
   </aside>
 </template>
 
 <style scoped>
-.sidebar {
-  width: 240px;
-  height: 100vh;
-  background: #ffffff;
-  color: #303133;
-  transition: width 0.3s ease;
+/* 胶囊悬浮侧边栏 */
+.capsule-sidebar {
+  /* 调整尺寸，让图标有更充裕的空间居中 */
+  width: 56px;
+  height: auto;
+  padding: 1.5rem 0;
+  margin: auto 0 auto 1.5rem;
+  align-self: center;
+
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e4e7ed;
-}
-
-.sidebar.collapsed {
-  width: 68px;
-  /* 给折叠后的图标留出合适的空间 */
-}
-
-.sidebar-header {
-  height: 60px;
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border-bottom: 1px solid #e4e7ed;
-  overflow: hidden;
+
+  /* 使用主题变量统一背景，摒弃带有黑色杂质的毛玻璃 */
+  background: var(--bg-elevated);
+  border-radius: 32px;
+  border: 1px solid var(--border-default);
+
+  /* 彻底移除黑色阴影，使用系统全局的清爽卡片阴影 */
+  box-shadow: var(--shadow-md);
+
+  z-index: 20;
+  transition: all 0.3s ease;
 }
 
-.sidebar.collapsed .sidebar-header {
+/* 导航图标区 */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-items: center;
+}
+
+.nav-item {
+  width: 38px;
+  height: 38px;
+  display: flex;
   justify-content: center;
-  padding: 0;
-}
-
-.brand {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.brand-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #67c23a;
-  box-shadow: 0 0 8px rgba(103, 194, 58, 0.4);
-}
-
-.brand-text {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.toggle-btn {
-  color: #909399;
-}
-
-.toggle-btn:hover {
-  color: #303133;
-  background-color: #f4f4f5;
-}
-
-.sidebar-scroll {
-  flex: 1;
-}
-
-:deep(.sidebar-menu) {
-  border-right: none;
-  background: transparent;
-  --el-menu-bg-color: transparent;
-  --el-menu-hover-bg-color: #f2f6fc;
-  --el-menu-text-color: #606266;
-  --el-menu-active-color: #146ef5;
-}
-
-:deep(.sidebar-menu .el-menu-item) {
-  height: 46px;
-  margin: 8px 12px;
   border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  position: relative;
 }
 
-:deep(.sidebar-menu .el-menu-item .el-icon) {
-  font-size: 20px;
+/* Tooltip 弹出层 */
+.nav-item::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 100%;
+  margin-left: 14px;
+  padding: 6px 10px;
+  background: #000000;
+  color: #ffffff;
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 100;
 }
 
-:deep(.sidebar-menu .el-menu-item.is-active) {
-  background: #e9f2ff;
-  font-weight: 600;
+/* Tooltip 小三角箭头 */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  margin-left: 6px;
+  border: 4px solid transparent;
+  border-right-color: #000000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 100;
 }
 
-:deep(.sidebar-menu.el-menu--collapse) {
-  width: 68px;
+.nav-item:hover::after,
+.nav-item:hover::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
 }
 
-:deep(.sidebar-menu.el-menu--collapse .el-menu-item) {
-  margin: 8px 12px;
-  padding: 0 !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: calc(100% - 24px);
-  /* 让背景框居中对齐 */
+.nav-item:hover {
+  background: #f3f4f6; /* 淡灰色 */
+  color: var(--text-primary, #111827);
+  border-radius: 10px;
+  transform: scale(1.05);
 }
 
-/* Element Plus 折叠时，默认使用 el-tooltip 包装图标，需要强制其内联样式居中 */
-:deep(.sidebar-menu.el-menu--collapse .el-menu-tooltip__trigger),
-:deep(.sidebar-menu.el-menu--collapse .el-tooltip__trigger) {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  width: 100% !important;
-  padding: 0 !important;
-}
-
-:deep(.sidebar-menu.el-menu--collapse .el-icon) {
-  margin: 0 !important;
+.nav-item.active {
+  background: #000000;
+  color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
 }
 </style>

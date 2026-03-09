@@ -2,20 +2,22 @@
 
 :root {
   --font-sans:
-    "Plus Jakarta Sans", "Manrope", "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Inter", "Noto Sans SC", "Plus Jakarta Sans", "Manrope", "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
 
   --bg-canvas: #f4f7fb;
   --bg-elevated: #ffffff;
   --bg-subtle: #eef2f8;
+  --bg-selectmodel: #a0aec0;
+  /* 更深一点的灰色 */
 
   --text-primary: #1e2530;
   --text-secondary: #5b6878;
   --text-muted: #7b8795;
 
-  --brand-500: #146ef5;
-  --brand-600: #0f5bd0;
+  --brand-500: #5b6878;
+  --brand-600: #7b8795;
   --brand-soft: #e9f2ff;
 
   --success-500: #1d9c5f;

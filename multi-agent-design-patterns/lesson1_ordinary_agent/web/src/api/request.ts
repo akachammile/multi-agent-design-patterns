@@ -2,7 +2,7 @@
  * 应用级别的 API 封装示例
  * 基于 index.ts 的基底方法，展示如何自定义业务 API
  */
-import { request, get, post, put, del, patch } from './index';
+import { request, get, post, put, del } from './index';
 import type { RequestOptions } from './index';
 
 // ============ 自定义方法示例 ============

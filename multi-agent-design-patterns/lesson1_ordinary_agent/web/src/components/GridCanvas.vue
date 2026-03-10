@@ -14,8 +14,8 @@ const WORLD_WIDTH = 2400
 const WORLD_HEIGHT = 1400
 const WORLD_PADDING = 20
 const GRID_SIZE = 24
-const MIN_SCALE = 0.8 // 限制最小缩放到 80% (原来是 0.6)
-const MAX_SCALE = 1.2 // 限制最大放大到 120% (原来是 1.8)
+const MIN_SCALE = 0.8
+const MAX_SCALE = 1.2
 const ZOOM_STEP = 0.08
 
 const viewportRef = ref<HTMLElement | null>(null)
@@ -107,7 +107,6 @@ const onViewportPointerDown = (event: PointerEvent) => {
   if ((event.target as HTMLElement | null)?.closest(".grid-node")) {
     return
   }
-  // 必须按住 Ctrl/Cmd 才能拖拽画布
   if (!event.ctrlKey && !event.metaKey) {
     return
   }
@@ -185,7 +184,6 @@ const onViewportWheel = (event: WheelEvent) => {
     return
   }
 
-  // 不按 Ctrl/Cmd 时，执行画布上下/左右滚动
   if (!event.ctrlKey && !event.metaKey) {
     panX.value -= event.deltaX
     panY.value -= event.deltaY
@@ -226,21 +224,27 @@ onBeforeUnmount(() => {
 <template>
   <section
     ref="viewportRef"
-    class="grid-viewport"
-    :class="{ 'is-panning': panState.active, 'is-dragging-node': dragState.active }"
+    class="relative h-full w-full overflow-hidden bg-[#fdfbf7]"
+    :class="{ 'cursor-grabbing': panState.active }"
     @pointerdown="onViewportPointerDown"
     @pointermove="onViewportPointerMove"
     @pointerup="onViewportPointerUp"
     @pointercancel="onViewportPointerUp"
     @wheel="onViewportWheel"
   >
-    <div class="workspace" :style="workspaceStyle">
-      <div class="workspace-boundary" aria-hidden="true" />
+    <div
+      class="absolute left-0 top-0 h-[1400px] w-[2400px] origin-top-left bg-[radial-gradient(circle,rgba(160,150,140,0.25)_1.5px,transparent_1.5px)] bg-[length:24px_24px]"
+      :style="workspaceStyle"
+    >
+      <div
+        class="pointer-events-none absolute inset-0 rounded-[14px] border-2 border-dashed border-[rgba(160,150,140,0.2)]"
+        aria-hidden="true"
+      />
 
       <article
         v-for="node in nodes"
         :key="node.id"
-        class="grid-node"
+        class="grid-node absolute flex select-none flex-col justify-center gap-[0.4rem] rounded-[16px] border border-black/5 bg-white/95 p-[1rem_1.2rem] backdrop-blur-xl shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1),inset_0_0_0_1px_rgba(255,255,255,0.5)] transition-[box-shadow,transform] duration-200 before:absolute before:inset-y-0 before:left-0 before:w-[6px] before:rounded-l-[16px] before:bg-gradient-to-b before:from-[#4facfe] before:to-[#00f2fe] before:content-[''] hover:-translate-y-0.5 hover:shadow-[0_12px_20px_-4px_rgba(0,0,0,0.08),0_4px_8px_-2px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1),inset_0_0_0_1px_rgba(255,255,255,0.5)] active:translate-y-0 active:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing"
         :style="{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -249,112 +253,9 @@ onBeforeUnmount(() => {
         }"
         @pointerdown.stop="onNodePointerDown(node, $event)"
       >
-        <h4>{{ node.title }}</h4>
-        <p>{{ node.id }}</p>
+        <h4 class="m-0 pl-2 text-[1.05rem] font-bold text-slate-800">{{ node.title }}</h4>
+        <p class="m-0 pl-2 text-[0.8rem] text-slate-500">{{ node.id }}</p>
       </article>
     </div>
   </section>
 </template>
-
-<style scoped>
-.grid-viewport {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  /* 移除了边框和圆角，让它能够真正充当“整个页面的底层” */
-  overflow: hidden;
-  /* 温润的米黄色背景 */
-  background: #fdfbf7; 
-}
-
-.grid-viewport.is-panning {
-  cursor: grabbing;
-}
-
-.workspace {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 2400px;
-  height: 1400px;
-  transform-origin: 0 0;
-  /* 现代感的点阵网格，调整颜色以适应米黄色底色 */
-  background-image: radial-gradient(circle, rgba(160, 150, 140, 0.25) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
-}
-
-.workspace-boundary {
-  position: absolute;
-  inset: 0;
-  border: 2px dashed rgba(160, 150, 140, 0.2);
-  border-radius: 14px;
-  pointer-events: none;
-}
-
-.grid-node {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 1rem 1.2rem;
-  border-radius: 16px;
-  /* 偏白且带边缘锐化 */
-  border: 1px solid rgba(0, 0, 0, 0.06); 
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  /* 强化阴影，与背景产生锐利对比 */
-  box-shadow: 
-    0 4px 12px -2px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  cursor: grab;
-  user-select: none;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-  overflow: hidden;
-}
-
-/* 节点左侧的彩色强调条 */
-.grid-node::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-  border-radius: 16px 0 0 16px;
-}
-
-/* 悬浮时的交互反馈：轻微上浮，阴影加深 */
-.grid-node:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 12px 20px -4px rgba(0, 0, 0, 0.08),
-    0 4px 8px -2px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-}
-
-.grid-node:active {
-  cursor: grabbing;
-  transform: translateY(0);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.grid-node h4 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
-  padding-left: 8px;
-}
-
-.grid-node p {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin: 0;
-  padding-left: 8px;
-}
-</style>

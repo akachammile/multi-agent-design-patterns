@@ -6,17 +6,19 @@ import DynamicIsland from "@/components/DynamicIsland.vue"
 </script>
 
 <template>
-  <div class="app-root">
-    <div class="background-canvas">
+  <div
+    class="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_8%_0%,#ffffff_0%,#f5f9ff_28%,transparent_52%),radial-gradient(circle_at_90%_12%,#eff6ff_0%,transparent_34%),#f4f7fb] text-slate-900"
+  >
+    <div class="absolute inset-0 z-0">
       <GridCanvas />
     </div>
 
-    <div class="layout-container">
+    <div class="relative z-10 flex h-full w-full pointer-events-none transition-all duration-300">
       <SidebarComponent />
 
-      <div class="main-stage">
-        <div class="ui-overlay">
-          <main class="main-content">
+      <div class="relative h-full flex-1 pointer-events-none">
+        <div class="absolute inset-0 flex pointer-events-none">
+          <main class="flex-1 p-4 lg:p-6 pointer-events-none">
             <DynamicIsland />
           </main>
         </div>
@@ -26,69 +28,3 @@ import DynamicIsland from "@/components/DynamicIsland.vue"
     </div>
   </div>
 </template>
-
-<style scoped>
-.app-root {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.background-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
-
-.layout-container {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  transition: all 0.3s ease;
-  pointer-events: none;
-}
-
-.layout-container > :deep(.capsule-sidebar),
-.layout-container > :deep(.chat-shell) {
-  pointer-events: auto;
-}
-
-.main-stage {
-  position: relative;
-  flex: 1;
-  height: 100%;
-  background: transparent;
-  pointer-events: none;
-}
-
-.ui-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  display: flex;
-}
-
-.main-content {
-  flex: 1;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  pointer-events: none;
-}
-
-@media (max-width: 1024px) {
-  .main-content {
-    padding: 1rem;
-  }
-}
-</style>

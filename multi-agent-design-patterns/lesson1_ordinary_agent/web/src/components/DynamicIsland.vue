@@ -1,80 +1,39 @@
 <template>
-  <header class="floating-header">
-    <h1>灵动岛</h1>
-    <p>Drag nodes on grid. Wheel to zoom canvas. Drag empty area to pan.</p>
-  </header>
+  <div class="pointer-events-none relative mb-auto flex h-[100px] w-[480px] self-center justify-center">
+    <header
+      class="pointer-events-auto absolute top-0 flex items-center justify-center overflow-hidden border border-black/10 bg-white/95 backdrop-blur-[16px] transition-[border-radius,width,height,box-shadow,padding] duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]"
+      :class="
+        isCollapsed
+          ? 'h-14 w-14 rounded-full p-0 shadow-[0_10px_25px_rgba(0,0,0,0.2)]'
+          : 'h-[100px] w-[480px] rounded-[28px] px-8 py-5 shadow-[0_30px_60px_rgba(0,0,0,0.5)]'
+      "
+      @click="toggleIsland"
+    >
+      <div
+        class="absolute flex flex-col items-center justify-center whitespace-nowrap text-center transition-opacity duration-150"
+        :class="isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100 delay-100'"
+      >
+        <h1 class="mb-2 text-[1.15rem] font-semibold text-slate-900">鍔ㄦ€佸矝</h1>
+        <p class="text-[0.85rem] text-slate-600">Drag nodes on grid. Wheel to zoom canvas. Drag empty area to pan.</p>
+      </div>
+
+      <div
+        class="absolute flex items-center justify-center transition-opacity duration-150"
+        :class="isCollapsed ? 'opacity-100 delay-100' : 'opacity-0 pointer-events-none'"
+      >
+        <Orbit :size="24" :stroke-width="2" />
+      </div>
+    </header>
+  </div>
 </template>
 
-<style scoped>
-.floating-header {
-  pointer-events: auto;
-  align-self: center;
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: #1e2530;
-  min-width: 180px;
-  height: 44px;
-  padding: 0 1.5rem;
-  border-radius: 22px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  transition:
-    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    border-radius 0.4s ease,
-    background 0.3s ease,
-    box-shadow 0.4s ease;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  margin-bottom: auto;
-}
+<script setup>
+import { ref } from "vue"
+import { Orbit } from "lucide-vue-next"
 
-.floating-header:hover {
-  height: auto;
-  min-height: 100px;
-  min-width: 480px;
-  padding: 1.2rem 2rem;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-}
+const isCollapsed = ref(true)
 
-.floating-header h1 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #1e2530 !important;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+const toggleIsland = () => {
+  isCollapsed.value = !isCollapsed.value
 }
-
-.floating-header p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #3a4a5c !important;
-  line-height: 1.5;
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transform: translateY(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.floating-header:hover h1 {
-  font-size: 1.15rem;
-  margin-bottom: 0.6rem;
-}
-
-.floating-header:hover p {
-  opacity: 1;
-  max-height: 100px;
-  transform: translateY(0);
-}
-</style>
+</script>

@@ -23,8 +23,21 @@ Example: `uv run pytest -q multi-agent-framework/langchain/1-langchain-core/runn
 - Python version: `>=3.13`.
 - Ruff settings: line length `100`, double quotes, spaces for indentation.
 - Naming: `snake_case` for functions/files, `PascalCase` for classes, `UPPER_CASE` for constants.
+- Design from first principles: start with the simplest version that satisfies the current requirement.
+- Do not add abstractions, defensive branches, extension points, or "just in case" code unless they are required now.
+- If a proposed change clearly follows first-principles simplification, execute it directly without asking for extra confirmation.
 - Keep changes minimal and local; avoid broad refactors unless requested.
 - Add comments only for non-obvious logic.
+
+## Assistant Response Style
+- Default to brief, direct answers.
+- Prefer the minimum explanation needed to solve the user's request.
+- Expand only when the user explicitly asks for more detail, examples, or reasoning.
+- Avoid restating obvious context or adding extra background unprompted.
+- Keep the tone restrained and neutral.
+- Prioritize concise, clear answers over warmth or conversational filler.
+- Use a serious, professional tone.
+- Do not use colloquial acknowledgement/closure phrases such as "我知道了", "好的", or "完毕".
 
 ## Testing Guidelines
 Pytest is used where tests exist (many modules are example-driven and may not have full coverage).

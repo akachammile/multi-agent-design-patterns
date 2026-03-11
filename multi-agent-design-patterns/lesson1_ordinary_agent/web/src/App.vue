@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SidebarComponent from "@/components/SidebarComponent.vue"
-import FixedChatPanel from "@/components/FixedChatPanel.vue"
+import AgentComponent from "@/components/AgentComponent.vue"
 import GridCanvas from "@/components/GridCanvas.vue"
 import DynamicIsland from "@/components/DynamicIsland.vue"
 </script>
@@ -24,7 +24,7 @@ import DynamicIsland from "@/components/DynamicIsland.vue"
         </div>
       </div>
 
-      <FixedChatPanel />
+      <AgentComponent />
     </div>
   </div>
 </template>

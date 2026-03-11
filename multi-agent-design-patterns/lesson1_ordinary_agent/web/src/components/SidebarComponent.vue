@@ -38,8 +38,7 @@ const handleSelect = (key: string) => {
   </aside>
 </template>
 
-<style scoped>
-@reference "tailwindcss";
+<style>
 
 .sidebar {
   @apply pointer-events-auto ml-6 my-auto flex w-14 flex-col items-center self-center rounded-[32px] py-6 transition-all duration-300;

@@ -1,8 +1,9 @@
-from .context import DeepAgentContext
-from src.agents.common import BaseAgent, load_model
-from src.configs import config as sys_config
 from langchain.agents import create_agent
 from langgraph.graph.state import CompiledStateGraph
+from src.agents.common import BaseAgent, load_model
+from src.configs import config as sys_config
+
+from .context import DeepAgentContext
 
 
 class DeepAgent(BaseAgent):

@@ -18,15 +18,10 @@ const handleSelect = (key: string) => {
 <template>
   <aside class="sidebar glass-panel">
     <div class="sidebar-nav">
-      <div
-        v-for="item in menuItems"
-        :key="item.key"
-        class="nav-item group"
-        :class="{ 'is-active': activeMenu === item.key }"
-        @click="handleSelect(item.key)"
-      >
+      <div v-for="item in menuItems" :key="item.key" class="nav-item group"
+        :class="{ 'is-active': activeMenu === item.key }" @click="handleSelect(item.key)">
         <component :is="item.icon" :size="20" :stroke-width="2.5" />
-        
+
         <!-- Tooltip Text -->
         <span class="tooltip-text">
           {{ item.label }}
@@ -39,6 +34,7 @@ const handleSelect = (key: string) => {
 </template>
 
 <style>
+@reference "tailwindcss";
 
 .sidebar {
   @apply pointer-events-auto ml-6 my-auto flex w-14 flex-col items-center self-center rounded-[32px] py-6 transition-all duration-300;
@@ -49,7 +45,8 @@ const handleSelect = (key: string) => {
 }
 
 .nav-item {
-  @apply relative flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-[10px] text-slate-500 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)];
+  @apply relative flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-[10px] text-slate-500 transition-all duration-200;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item:hover {
@@ -57,15 +54,18 @@ const handleSelect = (key: string) => {
 }
 
 .nav-item.is-active {
-  @apply bg-black text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)] scale-105;
+  @apply bg-black text-white scale-105;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .tooltip-text {
-  @apply pointer-events-none absolute left-full ml-3.5 whitespace-nowrap rounded-md bg-black px-2.5 py-1.5 text-xs text-white opacity-0 translate-x-[-10px] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)];
+  @apply pointer-events-none absolute left-full ml-3.5 whitespace-nowrap rounded-md bg-black px-2.5 py-1.5 text-xs text-white opacity-0 translate-x-[-10px] transition-all duration-200;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tooltip-arrow {
-  @apply pointer-events-none absolute left-full ml-1.5 h-0 w-0 border-y-[4px] border-y-transparent border-r-[4px] border-r-black opacity-0 translate-x-[-10px] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)];
+  @apply pointer-events-none absolute left-full ml-1.5 h-0 w-0 border-y-[4px] border-y-transparent border-r-[4px] border-r-black opacity-0 translate-x-[-10px] transition-all duration-200;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item:hover .tooltip-text,

@@ -222,37 +222,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section
-    ref="viewportRef"
-    class="relative h-full w-full overflow-hidden bg-[#fdfbf7]"
-    :class="{ 'cursor-grabbing': panState.active }"
-    @pointerdown="onViewportPointerDown"
-    @pointermove="onViewportPointerMove"
-    @pointerup="onViewportPointerUp"
-    @pointercancel="onViewportPointerUp"
-    @wheel="onViewportWheel"
-  >
+  <section ref="viewportRef" class="relative h-full w-full overflow-hidden bg-[#fdfbf7]"
+    :class="{ 'cursor-grabbing': panState.active }" @pointerdown="onViewportPointerDown"
+    @pointermove="onViewportPointerMove" @pointerup="onViewportPointerUp" @pointercancel="onViewportPointerUp"
+    @wheel="onViewportWheel">
     <div
       class="absolute left-0 top-0 h-[1400px] w-[2400px] origin-top-left bg-[radial-gradient(circle,rgba(160,150,140,0.25)_1.5px,transparent_1.5px)] bg-[length:24px_24px]"
-      :style="workspaceStyle"
-    >
+      :style="workspaceStyle">
       <div
         class="pointer-events-none absolute inset-0 rounded-[14px] border-2 border-dashed border-[rgba(160,150,140,0.2)]"
-        aria-hidden="true"
-      />
+        aria-hidden="true" />
 
-      <article
-        v-for="node in nodes"
-        :key="node.id"
+      <article v-for="node in nodes" :key="node.id"
         class="grid-node absolute flex select-none flex-col justify-center gap-[0.4rem] rounded-[16px] border border-black/5 bg-white/95 p-[1rem_1.2rem] backdrop-blur-xl shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1),inset_0_0_0_1px_rgba(255,255,255,0.5)] transition-[box-shadow,transform] duration-200 before:absolute before:inset-y-0 before:left-0 before:w-[6px] before:rounded-l-[16px] before:bg-gradient-to-b before:from-[#4facfe] before:to-[#00f2fe] before:content-[''] hover:-translate-y-0.5 hover:shadow-[0_12px_20px_-4px_rgba(0,0,0,0.08),0_4px_8px_-2px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1),inset_0_0_0_1px_rgba(255,255,255,0.5)] active:translate-y-0 active:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing"
         :style="{
           left: `${node.x}px`,
           top: `${node.y}px`,
           width: `${node.width}px`,
           height: `${node.height}px`,
-        }"
-        @pointerdown.stop="onNodePointerDown(node, $event)"
-      >
+        }" @pointerdown.stop="onNodePointerDown(node, $event)">
         <h4 class="m-0 pl-2 text-[1.05rem] font-bold text-slate-800">{{ node.title }}</h4>
         <p class="m-0 pl-2 text-[0.8rem] text-slate-500">{{ node.id }}</p>
       </article>

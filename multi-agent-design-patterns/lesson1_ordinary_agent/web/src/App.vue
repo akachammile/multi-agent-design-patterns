@@ -3,12 +3,13 @@ import SidebarComponent from "@/components/SidebarComponent.vue"
 import AgentComponent from "@/components/AgentComponent.vue"
 import GridCanvas from "@/components/GridCanvas.vue"
 import DynamicIsland from "@/components/DynamicIsland.vue"
+import Test from "@/components/test.vue";
+
 </script>
 
 <template>
   <div
-    class="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_8%_0%,#ffffff_0%,#f5f9ff_28%,transparent_52%),radial-gradient(circle_at_90%_12%,#eff6ff_0%,transparent_34%),#f4f7fb] text-slate-900"
-  >
+    class="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_8%_0%,#ffffff_0%,#f5f9ff_28%,transparent_52%),radial-gradient(circle_at_90%_12%,#eff6ff_0%,transparent_34%),#f4f7fb] text-slate-900">
     <div class="absolute inset-0 z-0">
       <GridCanvas />
     </div>
@@ -26,5 +27,6 @@ import DynamicIsland from "@/components/DynamicIsland.vue"
 
       <AgentComponent />
     </div>
+
   </div>
 </template>

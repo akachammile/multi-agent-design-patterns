@@ -58,7 +58,7 @@
           </div>
         </div>
 
-        <textarea ref="textareaRef" v-model="inputText" class="chat-textarea" placeholder="输入啊傻逼" rows="2"
+        <textarea ref="textareaRef" v-model="inputText" class="chat-textarea" placeholder="let's design" rows="2"
           @input="autoResize" @keydown="onInputKeydown" />
 
         <div class="input-actions-bar">
